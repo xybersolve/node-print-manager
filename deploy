@@ -1,0 +1,221 @@
+#!/usr/bin/env bash
+# ================================================================
+# -*- mode: bash -*-
+# vi: set ft=sh
+# ****************************************************************
+#
+# DESCRIPTION
+#    Deploy node REST server
+#
+# SYNTAX & EXAMPLES
+#    See 'SYNTAX' (below)
+#
+# ----------------------------------------------------------------
+# IMPLEMENTATION
+#    version         script 0.1.1
+#    author          Greg Milligan
+#    copyright       Copyright (c) 2018 http://xybersolve.io
+#    license         GNU General Public License
+#
+# ================================================================
+#  DEBUG OPTION
+#    set -n  # Uncomment to check your syntax, without execution.
+#    set -x  # Uncomment to debug this shell script
+#
+# ---------------------------------------------------------------
+#
+# TODO:
+# ****************************************************************
+
+
+# ---------------------------------------
+# CONFIGFURATION
+# ---------------------------------------
+# strict environment
+set -o errexit  # exit on command error status
+set -o nounset  # no unreadonlyd variables
+set -o pipefail # failr on pipe failures
+trap 'echo "Aborting due to errexit on line $LINENO. Exit code: ${?}" >&2' ERR
+
+# ---------------------------------------
+# GLOBAL VARIABLES
+# ---------------------------------------
+# booleans
+declare -ir TRUE=1
+declare -ir FALSE=0
+# script info
+
+declare -r PROGNAME="$(basename ${0})"
+declare -r VERSION=0.0.1
+declare -r SUBJECT=""
+declare -r KEYS=""
+declare -ri MIN_ARG_COUNT=1
+declare -r SYNTAX=$(cat <<EOF
+
+    Script: ${PROGNAME}
+    Purpose:
+    Usage: ${PROGNAME} [options]
+
+    Options:
+      --help:  help and usage
+      --version: show version info
+
+      --clean: clean up before install, to insure complete overwrite
+      --local: local install on server
+      --copy: use scp for simple copy to server
+
+EOF
+)
+# files & directories
+declare -r SCRIPT_DIR="$( dirname ${0} )"
+
+# actions
+declare -i LOCAL=${FALSE}
+declare -i COPY=${FALSE}
+declare -i CLEAN=${FALSE}
+
+# script globals
+declare -r APP_DIRECTORY='/home/ubuntu/node/print-manager'
+declare -r SERVER_IP='52.13.196.106'
+declare -r USER='ubuntu'
+declare HOST='control'
+# ---------------------------------------
+# COMMON FUNCTIONS
+# ---------------------------------------
+usage() {
+  echo "${SYNTAX}"
+}
+
+error() {
+  printf "\n%s\n" "Error: ${1}"
+}
+
+die() {
+  error "${1}"
+  usage
+  printf "\n\n"
+  exit "${2:-1}"
+}
+
+show_version() {
+  printf "\n\n%s  %s\n\n\n" "${PROGNAME}" "${VERSION}"
+  exit 0
+}
+
+show_help() {
+  printf "\n\n"
+  usage
+  printf "\n\n"
+  exit 0
+}
+
+# ---------------------------------------
+# MAIN ROUTINES
+# ---------------------------------------
+__build_host() {
+  [[ -n ${HOST} ]] && echo "${HOST}" || echo "${USER}@${IP}"
+}
+
+__ssh_config() {
+:
+# Host control
+#   Hostname 52.13.196.106
+#   Port 22
+#   User ubuntu
+#   IdentityFile ~/.ssh/transible-key
+}
+
+__clean() {
+  local -r host="$( __build_host )"
+  ssh -o StrictHostKeyChecking=no "${host}" "rm -rf ${APP_DIRECTORY}"
+}
+
+__local() {
+  echo "Start deploy"
+  cd ~/circleci-aws
+  git pull
+  npm i
+  npm run build
+  pm2 stop build/server
+  pm2 start build/server
+  echo "Deploy end"
+}
+
+__sync() {
+  echo "rsync to server"
+  local -r dir='/home/ubuntu/node/print-manager'
+  ssh -o StrictHostKeyChecking=no control 'mkdir -p /home/ubuntu/node/print-manager'
+  # rsync -avr -e "ssh -l ubuntu" --exclude 'node_modules' --exclude '.git' . control:/home/ubuntu/node/print-manager
+  rsync -avr --exclude 'node_modules' --exclude '.git' . control:${dir}
+}
+# sudo find ${SITE_PATH} -type d -print0 | xargs -0 -I{} chmod 755 {}
+# sudo find ./${WP_DOWNLOAD_DIR} !-name *.zip -maxdepth 1 -type f -print0 \
+#    | xargs -0 -I{} cp {} "${SITE_PATH}"
+
+__copy() {
+  # setup host connect string
+  local host="$( __build_host )"
+
+  [[ -n ${HOST} ]] \
+    && host="${HOST}" \
+    || host="${USER}@${IP}"
+
+  ssh -o StrictHostKeyChecking=no "${host}" "[[ -d ${APP_DIRECTORY} ]] || mkdir -p ${APP_DIRECTORY}"
+
+  # all first level directories
+  find . -type f -maxdepth 1 -print0 \
+    | xargs -0 -I{} scp -o StrictHostKeyChecking=no {} ${host}:${APP_DIRECTORY}
+
+  # directories in project source
+  find ./src -type d  -print0 \
+    | xargs -0 -I{} scp -r -o StrictHostKeyChecking=no {} ${host}:${APP_DIRECTORY}
+}
+
+__remote() {
+  # upload all the code to machine
+  find . -type d -name 'src/*' \
+    | xargs tar cf - \
+    | ssh user@remote tar xf - -C /my/dir
+
+  find -type f
+  # rsync -avr -e "ssh -l user" --exclude 'fl_*' ./bench* remote:/my/dir
+  scp -r -o StrictHostKeyChecking=no ./ ubuntu@13.236.1.107:/home/circleci-aws/
+  # Run script inside of machine
+  ssh -o StrictHostKeyChecking=no ubuntu@13.236.1.107 "./deploy.sh"
+}
+
+__get_opts() {
+  while (( $# > 0 )); do
+    local arg="${1}"; shift;
+    case ${arg} in
+      --help)    show_help                ;;
+      --version) show_version             ;;
+      --clean)            CLEAN=${TRUE}   ;;
+      --local)            LOCAL=${TRUE}   ;;
+      --copy)             COPY=${TRUE}    ;;
+      --data*) # --option=argument
+        [[ ${arg} =~ '=' ]] && DATA="${arg#*=}"
+        ;;
+      *) die "Unknown option: ${arg}" ;;
+   esac
+  done
+  return 0
+}
+
+__dispatch() {
+  # __clean should preceed other routines in dispatch
+  (( CLEAN )) && __clean
+  (( LOCAL )) && __local
+  (( COPY )) && __copy
+  return 0
+}
+
+main() {
+  (( ${#} < MIN_ARG_COUNT )) && die "Expects at least ${MIN_ARG_COUNT} arguments" 1
+  (( $# > 0 )) && __get_opts "$@"
+
+  __dispatch
+
+  return 0
+}
+(( ${#} > 0 )) && main "${@}" || main
