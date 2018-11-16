@@ -60,10 +60,11 @@ declare -r SYNTAX=$(cat <<EOF
       --help:  help and usage
       --version: show version info
 
-      --clean: Clean up before install, to insure complete overwrite
+      --clean_remote: Clean up remote project space before install, to insure complete overwrite
       --local: Local install on server
       --copy: Use scp for simple copy to server
       --sync: Use rsync for project copy to the server
+      --all:
 
 EOF
 )
@@ -74,7 +75,7 @@ declare -r CONFIG_FILE="${SCRIPT_DIR}/deploy.config.sh"
 # actions
 declare -i LOCAL=${FALSE}
 declare -i COPY=${FALSE}
-declare -i CLEAN=${FALSE}
+ declare -i CLEAN_REMOTE=${FALSE}
 declare -i SYNC=${FALSE}
 
 # script globals
@@ -133,7 +134,7 @@ __ssh_config() {
 #   IdentityFile ~/.ssh/transible-key
 }
 
-__clean() {
+__clean_remote() {
   local -r host="$( __build_host )"
   ssh -o StrictHostKeyChecking=no "${host}" "rm -rf ${APP_DIRECTORY}"
 }
@@ -174,9 +175,13 @@ __all() {
 __sync() {
   echo "rsync to server"
   local -r dir='/home/ubuntu/node/print-manager'
+
+  # create project directory
   ssh -o StrictHostKeyChecking=no control 'mkdir -p /home/ubuntu/node/print-manager'
-  # rsync -avr -e "ssh -l ubuntu" --exclude 'node_modules' --exclude '.git' . control:/home/ubuntu/node/print-manager
+  # copy without git tree
   # rsync -avr --exclude 'node_modules' --exclude '.git' . control:${dir}
+
+  # copy with git tree
   rsync -avr --exclude 'node_modules' . control:${dir}
 }
 # sudo find ${SITE_PATH} -type d -print0 | xargs -0 -I{} chmod 755 {}
@@ -184,12 +189,7 @@ __sync() {
 #    | xargs -0 -I{} cp {} "${SITE_PATH}"
 
 __copy() {
-  # setup host connect string
   local host="$( __build_host )"
-
-  # [[ -n ${HOST} ]] \
-  #   && host="${HOST}" \
-  #   || host="${USER}@${IP}"
 
   ssh -o StrictHostKeyChecking=no "${host}" "[[ -d ${APP_DIRECTORY} ]] || mkdir -p ${APP_DIRECTORY}"
 
@@ -203,16 +203,15 @@ __copy() {
 }
 
 __remote() {
-  # upload all the code to machine
-  find . -type d -name 'src/*' \
-    | xargs tar cf - \
-    | ssh user@remote tar xf - -C /my/dir
+  local host="$( __build_host )"
 
-  find -type f
-  # rsync -avr -e "ssh -l user" --exclude 'fl_*' ./bench* remote:/my/dir
-  scp -r -o StrictHostKeyChecking=no ./ ubuntu@13.236.1.107:/home/circleci-aws/
+  # upload all the code to machine
+  # find . -type d -name 'src/*' \
+  #   | xargs tar cf - \
+  #   | ssh "${host}" tar xf - -C "${APP_DIRECTORY}"
+
   # Run script inside of machine
-  ssh -o StrictHostKeyChecking=no ubuntu@13.236.1.107 "./deploy.sh"
+  ssh -o StrictHostKeyChecking=no "${host}" "./deploy --all"
 }
 
 __get_opts() {
@@ -221,7 +220,7 @@ __get_opts() {
     case ${arg} in
       --help)    show_help                ;;
       --version) show_version             ;;
-      --clean)            CLEAN=${TRUE}   ;;
+      --clean-remote)  CLEAN_REMOTE=${TRUE}   ;;
       --local)            LOCAL=${TRUE}   ;;
       --copy)             COPY=${TRUE}    ;;
       --sync)             SYNC=${TRUE}    ;;
@@ -236,7 +235,7 @@ __get_opts() {
 
 __dispatch() {
   # __clean should preceed other routines in dispatch
-  (( CLEAN )) && __clean
+  (( CLEAN_REMOTE )) && __clean_remote
   (( LOCAL )) && __local
   (( COPY )) && __copy
   (( SYNC )) && __sync
