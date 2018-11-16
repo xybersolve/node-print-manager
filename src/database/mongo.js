@@ -1,7 +1,4 @@
 const { MongoClient, ObjectId } = require('mongodb')
-// const ObjectId = require('mongodb').ObjectId
-// const config = require('../config/config')
-// const database = config.mongo.database
 const { connectString, database } = require('../config/config').mongo
 
 let dbClient = null
@@ -32,7 +29,7 @@ const postConnect = (DB) => {
   // routines to run after initial connection
   console.log('🍄  mongo.postConnect()')
   const col = DB.db.collection('images')
-  col.distinct('name').then(names => console.log(`images->names.length: ${names.length}`))
+  col.distinct('name').then(names => console.log(`🚀  images->names.length: ${names.length}`))
 }
 
 const collection = name => db.collection(name)
