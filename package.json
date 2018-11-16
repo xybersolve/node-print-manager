@@ -5,7 +5,14 @@
   "main": "pm-server.js",
   "scripts": {
     "start:prod": "node src/index.js",
+    "start:prod:pm2": "export NODE_ENV=production && pm2 start ./src/index.js",
+    "start:prod:nohup": "export NODE_ENV=production && nohup node ./src/index.js &",
+    "start:pm2":"export NODE_ENV=production && pm2 start ecosystem.config.js",
+    "stop:pm2":"pm2 stop ecosystem.config.js",
+    "restart:pm2":"pm2 restart ecosystem.config.js",
     "start:dev": "nodemon src/index.js",
+    "kill:pm2": "kill $(ps aux | grep pm2 | grep -v grep | awk '{print $2}')",
+    "ps:pm2": "echo $(ps aux | grep pm2 | grep -v grep)",
     "lint": "standard --verbose | snazzy",
     "test": "mocha -R spec src/**/*.spec.js",
     "metric": "nodejs-dashboard -- node -r nodejs-dashboard src/index.js"
