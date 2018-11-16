@@ -60,25 +60,29 @@ declare -r SYNTAX=$(cat <<EOF
       --help:  help and usage
       --version: show version info
 
-      --clean: clean up before install, to insure complete overwrite
-      --local: local install on server
-      --copy: use scp for simple copy to server
+      --clean: Clean up before install, to insure complete overwrite
+      --local: Local install on server
+      --copy: Use scp for simple copy to server
+      --sync: Use rsync for project copy to the server
 
 EOF
 )
 # files & directories
 declare -r SCRIPT_DIR="$( dirname ${0} )"
+declare -r CONFIG_FILE="${SCRIPT_DIR}/deploy.config.sh"
 
 # actions
 declare -i LOCAL=${FALSE}
 declare -i COPY=${FALSE}
 declare -i CLEAN=${FALSE}
+declare -i SYNC=${FALSE}
 
 # script globals
-declare -r APP_DIRECTORY='/home/ubuntu/node/print-manager'
-declare -r SERVER_IP='52.13.196.106'
-declare -r USER='ubuntu'
-declare HOST='control'
+# declare -r GIT_REP="git@github.com:xybersolve/node-print-manager.git"
+# declare -r APP_DIRECTORY='/home/ubuntu/node/print-manager'
+# declare -r SERVER_IP='52.13.196.106'
+# declare -r USER='ubuntu'
+# declare HOST='control'
 # ---------------------------------------
 # COMMON FUNCTIONS
 # ---------------------------------------
@@ -112,7 +116,11 @@ show_help() {
 # ---------------------------------------
 # MAIN ROUTINES
 # ---------------------------------------
+source "${CONFIG_FILE}" \
+  die "Unable to load config file: ${CONFIG_FILE}" 1
+
 __build_host() {
+  # create host string: using HOST or user@server
   [[ -n ${HOST} ]] && echo "${HOST}" || echo "${USER}@${IP}"
 }
 
@@ -130,15 +138,37 @@ __clean() {
   ssh -o StrictHostKeyChecking=no "${host}" "rm -rf ${APP_DIRECTORY}"
 }
 
-__local() {
-  echo "Start deploy"
-  cd ~/circleci-aws
-  git pull
+__clone() {
+  echo "Clone"
+  cd ${APP_DIRECTORY}
+  git clone "${GIT_REPO}"
+}
+
+__install() {
+  echo "Install PM2 & dependencies"
+  cd ${APP_DIRECTORY}
+  which pm2 &>/dev/null || npm i -g pm2
   npm i
-  npm run build
-  pm2 stop build/server
-  pm2 start build/server
-  echo "Deploy end"
+}
+
+__run() {
+  echo "Start server"
+  cd ${APP_DIRECTORY}
+  npm run start:prod:pm2
+  # npm run start:pm2
+}
+
+__all() {
+  echo "Start deploy"
+  cd ${APP_DIRECTORY}
+  __clone
+  __install
+  __run
+
+  # npm run build
+  # pm2 stop build/server
+  # pm2 start build/server
+  # echo "Deploy end"
 }
 
 __sync() {
@@ -146,7 +176,8 @@ __sync() {
   local -r dir='/home/ubuntu/node/print-manager'
   ssh -o StrictHostKeyChecking=no control 'mkdir -p /home/ubuntu/node/print-manager'
   # rsync -avr -e "ssh -l ubuntu" --exclude 'node_modules' --exclude '.git' . control:/home/ubuntu/node/print-manager
-  rsync -avr --exclude 'node_modules' --exclude '.git' . control:${dir}
+  # rsync -avr --exclude 'node_modules' --exclude '.git' . control:${dir}
+  rsync -avr --exclude 'node_modules' . control:${dir}
 }
 # sudo find ${SITE_PATH} -type d -print0 | xargs -0 -I{} chmod 755 {}
 # sudo find ./${WP_DOWNLOAD_DIR} !-name *.zip -maxdepth 1 -type f -print0 \
@@ -156,9 +187,9 @@ __copy() {
   # setup host connect string
   local host="$( __build_host )"
 
-  [[ -n ${HOST} ]] \
-    && host="${HOST}" \
-    || host="${USER}@${IP}"
+  # [[ -n ${HOST} ]] \
+  #   && host="${HOST}" \
+  #   || host="${USER}@${IP}"
 
   ssh -o StrictHostKeyChecking=no "${host}" "[[ -d ${APP_DIRECTORY} ]] || mkdir -p ${APP_DIRECTORY}"
 
@@ -193,6 +224,7 @@ __get_opts() {
       --clean)            CLEAN=${TRUE}   ;;
       --local)            LOCAL=${TRUE}   ;;
       --copy)             COPY=${TRUE}    ;;
+      --sync)             SYNC=${TRUE}    ;;
       --data*) # --option=argument
         [[ ${arg} =~ '=' ]] && DATA="${arg#*=}"
         ;;
@@ -207,6 +239,7 @@ __dispatch() {
   (( CLEAN )) && __clean
   (( LOCAL )) && __local
   (( COPY )) && __copy
+  (( SYNC )) && __sync
   return 0
 }
 
