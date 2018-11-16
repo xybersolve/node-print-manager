@@ -1,0 +1,45 @@
+version: 2
+jobs:
+    build:
+        docker:
+            - image: circleci/node:10.7
+        steps:
+            - checkout
+            - restore_cache:
+                keys:
+                    - v1-dependencies-{{ checksum "package.json" }}
+                    - v1-dependencies-
+            - run:
+                name: Install dependencies
+                command: npm install
+            - save_cache:
+                key: v1-dependencies-{{ checksum "package.json" }}
+                paths:
+                    - node_modules
+            - run:
+                name: Lint code
+                command: npm run lint
+            - run:
+                name: Build app
+                command: npm run build
+            - save_cache:
+                key: v1-build-{{ .Environment.CIRCLE_BRANCH }}-{{ .Environment.CIRCLE_SHA1 }}
+                paths:
+                    - .next
+    deploy:
+        docker:
+            - image: circleci/node:10.7
+        steps:
+            - run:
+                name: Deploy to AWS EC2
+                command: |
+                  scp -r -o StrictHostKeyChecking=no ./ ubuntu@13.236.1.107:/home/circleci-aws/
+                  ssh -o StrictHostKeyChecking=no ubuntu@13.236.1.107 "./deploy.sh"
+workflows:
+    version: 2
+    build_and_deploy:
+        jobs:
+            - build
+            - deploy:
+                requires:
+                    - build
