@@ -60,11 +60,13 @@ declare -r SYNTAX=$(cat <<EOF
       --help:  help and usage
       --version: show version info
 
-      --clean_remote: Clean up remote project space before install, to insure complete overwrite
+      --clean-local: Clean local project directory
+      --clean_remote: Clean up remote project directory
       --local: Local install on server
       --copy: Use scp for simple copy to server
       --sync: Use rsync for project copy to the server
-      --all:
+      --clone: Clone project from repository
+      --all: Run: clone, install and run
 
 EOF
 )
@@ -75,7 +77,8 @@ declare -r CONFIG_FILE="${SCRIPT_DIR}/deploy.config.sh"
 # actions
 declare -i LOCAL=${FALSE}
 declare -i COPY=${FALSE}
- declare -i CLEAN_REMOTE=${FALSE}
+declare -i CLEAN_LOCAL=${FALSE}
+declare -i CLEAN_REMOTE=${FALSE}
 declare -i SYNC=${FALSE}
 
 # script globals
@@ -139,6 +142,10 @@ __clean_remote() {
   ssh -o StrictHostKeyChecking=no "${host}" "rm -rf ${APP_DIRECTORY}"
 }
 
+__clean_local() {
+  rm -rf ${APP_DIRECTORY}
+}
+
 __clone() {
   echo "Clone"
   cd ${APP_DIRECTORY}
@@ -159,17 +166,16 @@ __run() {
   # npm run start:pm2
 }
 
+__stop() {
+  npm run stop:pm2
+}
+
 __all() {
   echo "Start deploy"
   cd ${APP_DIRECTORY}
   __clone
   __install
   __run
-
-  # npm run build
-  # pm2 stop build/server
-  # pm2 start build/server
-  # echo "Deploy end"
 }
 
 __sync() {
@@ -180,7 +186,6 @@ __sync() {
   ssh -o StrictHostKeyChecking=no control 'mkdir -p /home/ubuntu/node/print-manager'
   # copy without git tree
   # rsync -avr --exclude 'node_modules' --exclude '.git' . control:${dir}
-
   # copy with git tree
   rsync -avr --exclude 'node_modules' . control:${dir}
 }
@@ -220,7 +225,8 @@ __get_opts() {
     case ${arg} in
       --help)    show_help                ;;
       --version) show_version             ;;
-      --clean-remote)  CLEAN_REMOTE=${TRUE}   ;;
+      --clean-local)   CLEAN_LOCAL=${TRUE}  ;;
+      --clean-remote)  CLEAN_REMOTE=${TRUE} ;;
       --local)            LOCAL=${TRUE}   ;;
       --copy)             COPY=${TRUE}    ;;
       --sync)             SYNC=${TRUE}    ;;
@@ -235,6 +241,7 @@ __get_opts() {
 
 __dispatch() {
   # __clean should preceed other routines in dispatch
+  (( CLEAN_LOCAL )) && __clean_local
   (( CLEAN_REMOTE )) && __clean_remote
   (( LOCAL )) && __local
   (( COPY )) && __copy
