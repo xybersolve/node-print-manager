@@ -55,5 +55,5 @@ router.delete('/:id', (req, res, next) => {
 
 module.exports = (DB) => {
   images = require('../providers/images-provider')(DB)
-  return router;
+  return router
 };

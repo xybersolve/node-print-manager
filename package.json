@@ -14,6 +14,7 @@
     "kill:pm2": "kill $(ps aux | grep pm2 | grep -v grep | awk '{print $2}')",
     "ps:pm2": "echo $(ps aux | grep pm2 | grep -v grep)",
     "lint": "standard --verbose | snazzy",
+    "lint:fix": "npm run lint --fix",
     "test": "mocha -R spec src/**/*.spec.js",
     "metric": "nodejs-dashboard -- node -r nodejs-dashboard src/index.js",
     "precommit": ["lint"]
