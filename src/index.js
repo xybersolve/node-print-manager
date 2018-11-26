@@ -19,7 +19,6 @@ const mongo = require('./database/mongo')
 // middleware
 const dbHookSetup = require('./middleware/db-hook').setup
 const errorHandlers = require('./middleware/errorHandlers')
-// const reflect = require('./middleware/reflect')
 
 checkVersion()
 
@@ -31,14 +30,18 @@ const routeSetup = (DB) => {
   }))
   server.use(bodyParser.json())
   server.use(cors())
+
   // server.use(dbHook)
   // /api/v1/heatseeker
   console.log(`👉🏻  restBase: ${restBase}`)
+  // REST domains
   server.use(`${restBase}/images`, dbHook, require('./routes/images')(DB))
-  // server.use(`${restBase}/heatseeker`, dbHook, require('./routes/heatseeker'))
-  // server.use(`${restBase}/exchange`, dbHook, require('./routes/exchange'))
-  // server.use(`${restBase}/coin`, dbHook, require('./routes/coin'))
-  // server.use(`${restBase}/options`, dbHook, require('./routes/options'))
+  server.use(`${restBase}/sizes`, dbHook, require('./routes/sizes')(DB))
+  server.use(`${restBase}/materials`, dbHook, require('./routes/materials')(DB))
+  server.use(`${restBase}/locations`, dbHook, require('./routes/locations')(DB))
+  server.use(`${restBase}/invoices`, dbHook, require('./routes/invoices')(DB))
+  server.use(`${restBase}/lines`, dbHook, require('./routes/lines')(DB))
+  server.use(`${restBase}/status`, dbHook, require('./routes/status')(DB))
 }
 
 const errorSetup = () => {
@@ -49,7 +52,7 @@ const errorSetup = () => {
   server.use(errorHandlers.productionErrors)
 }
 
-// middleware - reflects request infomation
+// middleware - reflects incoming requests
 server.use((req, res, next) => {
   console.log(`👉🏻  ${req.method}: ${req.protocol}:/${req.url}`)
   next()

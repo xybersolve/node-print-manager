@@ -66,6 +66,14 @@ declare -r SYNTAX=$(cat <<EOF
       --delete-image=id: Delete image by id
       --image-next-id: Get next id
 
+      --get=/endpoint: Get Generic Endpoint
+
+    Examples:
+      ./rest --get=/images
+      ./rest --get=/sizes
+      ./rest --get=/sizes/aspect-ratios
+      ./rest --get=/invoices/next-id
+
 EOF
 )
 # files & directories
@@ -76,6 +84,8 @@ declare -i GET_IMAGES=${FALSE}
 declare -i GET_IMAGE=${FALSE}
 declare -i POST_IMAGE=${FALSE}
 declare -i DELETE_IMAGE=${FALSE}
+declare -i SHOW_IMAGES=${FALSE}
+declare -i GET_GENERIC=${FALSE}
 
 # script globals
 # immutable
@@ -85,13 +95,13 @@ declare -r HTTP_URL="http://localhost:${HTTP_PORT}"
 declare -r REST_URL="${HTTP_URL}/${REST_BASE}"
 
 # mutable
+declare ENDPOINT=''
 declare IMAGE_ID=63
 declare ID
 # these will be formatted to make command calls
 # __${verb}_${col}
 declare VERB='get'
 declare COL='image'
-
 
 
 # ---------------------------------------
@@ -130,6 +140,20 @@ show_help() {
 #
 # -D-: indlcude headers
 #
+__show_images() {
+  echo "${REST_URL}/images/"
+}
+
+__get_generic() {
+  echo "${REST_URL}${ENDPOINT}"
+
+  curl \
+    --header "Content-type: application/json" \
+    --request GET \
+    -D- \
+    "${REST_URL}${ENDPOINT}"
+}
+
 __get_images() {
 
   curl \
@@ -192,6 +216,10 @@ __get_opts() {
     case ${arg} in
       --help)    show_help                ;;
       --version) show_version             ;;
+      --image)  COLLECTION='images'       ;;
+      --post)   VERB='post'               ;;
+      --delete) VERB='delete'             ;;
+      --show-images)     SHOW_IMAGES=${TRUE}  ;;
       --get-images)      GET_IMAGES=${TRUE}   ;;
       --image-next-id)
         __get_next_id; exit 0; ;;
@@ -209,6 +237,11 @@ __get_opts() {
       --data*)
         [[ ${arg} =~ '=' ]] && DATA="${arg#*=}"
         ;;
+      --get*)
+        GET_GENERIC=${TRUE}
+        [[ ${arg} =~ '=' ]] && ENDPOINT="${arg#*=}"
+        ;;
+
       *) die "Unknown option: ${arg}" ;;
    esac
   done
@@ -216,10 +249,15 @@ __get_opts() {
 }
 
 __dispatch() {
+  # refactor to __action_verb()
+  #local cmd="__${VERB}_${COLLECTION}"
+  #${cmd}
+  (( SHOW_IMAGES )) && __show_images
   (( GET_IMAGES )) && __get_images
   (( GET_IMAGE )) && __get_image
   (( POST_IMAGE )) && __post_image
   (( DELETE_IMAGE )) && __delete_image
+  (( GET_GENERIC )) && __get_generic
   return 0
 }
 

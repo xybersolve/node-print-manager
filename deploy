@@ -68,6 +68,15 @@ declare -r SYNTAX=$(cat <<EOF
       --clone: Clone project from repository
       --all: Run: clone, install and run
 
+      --mongo-backup[=collection]: Backup mongo collection or database (bson)
+      --mongo-restore[=collection]: Restore database or collection from mongo backup
+
+      Examples:
+        ${PROGNAME} --mongo-backup
+        ${PROGNAME} --mongo-backup=locations
+        ${PROGNAME} --mongo-restore
+        ${PROGNAME} --mongo-restore=owners
+
 EOF
 )
 # files & directories
@@ -80,8 +89,12 @@ declare -i COPY=${FALSE}
 declare -i CLEAN_LOCAL=${FALSE}
 declare -i CLEAN_REMOTE=${FALSE}
 declare -i SYNC=${FALSE}
+declare -i MONGO_BACKUP=${FALSE}
+declare -i MONGO_RESTORE=${FALSE}
+declare -i MONGO_STATS=${FALSE}
 
 # script globals
+COLLECTION=''
 # declare -r GIT_REP="git@github.com:xybersolve/node-print-manager.git"
 # declare -r APP_DIRECTORY='/home/ubuntu/node/print-manager'
 # declare -r SERVER_IP='52.13.196.106'
@@ -219,6 +232,49 @@ __remote() {
   ssh -o StrictHostKeyChecking=no "${host}" "./deploy --all"
 }
 
+__mongo_backup() {
+  # hypotehtical usage examples
+  # backup a collection
+  # mongodump --db test --collection collection
+  # backup remote host
+  # mongodump --host mongodb1.example.net --port 37017 --username user --password "pass" --out /opt/backup/mongodump-2011-10-24
+  if [[ -n "${COLLECTION}" ]]; then
+    mongodump --db "${DATABASE}" --collection "${COLLECTION}" --out "${MONGO_BACKUP_DIR}"
+  else
+    mongodump --db "${DATABASE}" --out "${MONGO_BACKUP_DIR}"
+  fi
+}
+
+__mongo_restore() {
+  [[ -d ${MONGO_BACKUP_DIR} ]] || die "No data directory was found: ${MONGO_BACKUP_DIR}" 2
+
+  if [[ -n ${COLLECTION} ]]; then
+    # --mongo-restore=locations
+    # if collection was passed as argument value, use restore this collection
+    # drop and restore collection - for data manipulation and freshening data
+    local file="${MONGO_BACKUP_DIR}/${COLLECTION}.bson"
+    #mongo --shell use printManager
+    #mongo --shell db.dropCollection("${COLLECTION}")
+    #mongo --shell db.createCollection("${COLLECTION}")
+    mongorestore -d ${DATABASE} -c ${collection} ${file}
+  else
+    local -a files=($( ls ${MONGO_BACKUP_DIR}/*.bson | tr ' ' '\r\n'  ))
+    for file in "${files[@]}"; do
+      local base=$( basename "${file}" )
+      local collection="${base%.*}"
+      printf "Restoring: %s -> %s -> %s\n" "${DATABASE}" "${collection}" "${file}"
+      mongorestore -d ${DATABASE} -c ${collection} ${file}
+    done
+  fi
+#
+}
+
+__mongo_stats() {
+  # mongo --eval "db = connect('doamin.com:27017/database')"
+  mongo "${DATABASE}" --eval "printjson(db.getCollectionNames())"
+  mongo "${DATABASE}" --eval "printjson(db.stats())"
+}
+
 __get_opts() {
   while (( $# > 0 )); do
     local arg="${1}"; shift;
@@ -230,6 +286,15 @@ __get_opts() {
       --local)            LOCAL=${TRUE}   ;;
       --copy)             COPY=${TRUE}    ;;
       --sync)             SYNC=${TRUE}    ;;
+      # mongo
+      --mongo-backup*)      MONGO_BACKUP=${TRUE}
+        [[ ${arg} =~ '=' ]] && COLLECTION="${arg#*=}"
+        ;;
+      --mongo-restore*)    MONGO_RESTORE=${TRUE}
+        [[ ${arg} =~ '=' ]] && COLLECTION="${arg#*=}"
+        ;;
+      --mongo-stats) MONGO_STATS=${TRUE} ;;
+
       --data*) # --option=argument
         [[ ${arg} =~ '=' ]] && DATA="${arg#*=}"
         ;;
@@ -246,6 +311,10 @@ __dispatch() {
   (( LOCAL )) && __local
   (( COPY )) && __copy
   (( SYNC )) && __sync
+  # mongo routines
+  (( MONGO_BACKUP )) && __mongo_backup
+  (( MONGO_RESTORE )) && __mongo_restore
+  (( MONGO_STATS )) && __mongo_stats
   return 0
 }
 
