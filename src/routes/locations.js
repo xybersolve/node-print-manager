@@ -26,25 +26,16 @@ router.get('/active', (req, res, next) => {
   }).catch(next)
 })
 
-
-// test - get next id
-router.get('/next-id', (req, res, next) => {
-  locations.getNextId().then(result => {
-    console.dir(result)
-    res.send(result)
-  }).catch(next)
-})
-
-// return image by id
+// return location by id
 router.get('/:id', (req, res, next) => {
   console.log(`route:id: ${req.params.id}`)
-  locations.get(req.params.id).then(image => {
-    console.dir(image)
-    res.status(200).json(image)
+  locations.get(req.params.id).then(location => {
+    console.dir(location)
+    res.status(200).json(location)
   }).catch(next)
 })
 
-// create new image - return
+// create new location - return
 router.post('/', (req, res, next) => {
   var opts = {
     owner,

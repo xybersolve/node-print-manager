@@ -13,14 +13,6 @@ router.get('/', (req, res, next) => {
   }).catch(next)
 })
 
-// test - get next id
-router.get('/next-id', (req, res, next) => {
-  images.getNextId().then(result => {
-    console.dir(result)
-    res.send(result)
-  }).catch(next)
-})
-
 // return image by id
 router.get('/:id', (req, res, next) => {
   console.log(`route:id: ${req.params.id}`)

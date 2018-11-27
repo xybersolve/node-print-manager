@@ -26,31 +26,34 @@ router.get('/active', (req, res, next) => {
   }).catch(next)
 })
 
-
-// test - get next id
-router.get('/next-id', (req, res, next) => {
-  lines.getNextId().then(result => {
-    console.dir(result)
-    res.send(result)
-  }).catch(next)
-})
-
-// return image by id
+// return line by id
 router.get('/:id', (req, res, next) => {
   console.log(`route:id: ${req.params.id}`)
-  lines.get(req.params.id).then(image => {
-    console.dir(image)
-    res.status(200).json(image)
+  lines.get(req.params.id).then(line => {
+    console.dir(line)
+    res.status(200).json(line)
   }).catch(next)
 })
 
-// create new image - return
+// create new line - return
 router.post('/', (req, res, next) => {
   var opts = {
     owner,
     data: req.body
   }
   lines.create(opts).then(result => {
+    res.status(200).json(result)
+  }).catch(next)
+})
+
+// update existing line - void return
+router.put('/:id', (req, res, next) => {
+  const opts = {
+    owner,
+    id: req.params.id,
+    data: req.body
+  }
+  lines.update(opts).then(result => {
     res.status(200).json(result)
   }).catch(next)
 })

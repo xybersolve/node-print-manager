@@ -1,22 +1,14 @@
 let db = null
 let lines = null
+let ObjectId = null
 
 // using single owner for now
 const owner = 'Greg Milligan'
 
 module.exports = (DB) => {
   db = DB.db
+  ObjectId = DB.ObjectId
   lines = db.collection('lines')
-
-  // suport routines
-  // get next id in the image collection for this owner
-  const getNextId = (cb) => {
-    lines.find({ owner: owner }, { _id: 0, id: 1 }).sort({ id: -1 }).limit(1).toArray((err, result) => {
-      if (err) return cb(err)
-      let nextId = +result[0].id + 1
-      cb(null, nextId)
-    })
-  }
 
   return {
     getAll: () => {
@@ -43,7 +35,7 @@ module.exports = (DB) => {
     },
     getAllActive: () => {
       return new Promise((resolve, reject) => {
-        lines.find({ owner: owner, active: true }).sort({ name: 1 }).toArray().then((results) => {
+        lines.find({ owner: owner, active: true }).sort({ sortOrder: 1 }).toArray().then((results) => {
           resolve(results)
         }).catch((err) => {
           reject(err)
@@ -53,8 +45,8 @@ module.exports = (DB) => {
     get: (id) => {
       console.log(`provider:id: ${id}`)
       return new Promise((resolve, reject) => {
-        lines.findOne({ id: +id, owner: owner }).then(image => {
-          resolve(image)
+        lines.findOne({ _id: ObjectId(id), owner: owner }).then(result => {
+          resolve(result)
         }).catch(err => {
           reject(err)
         })
@@ -64,16 +56,28 @@ module.exports = (DB) => {
       console.dir(data)
       data.owner = owner
       return new Promise((resolve, reject) => {
-        getNextId((err, nextId) => {
-          if (err) return reject(err)
-          data.id = nextId
-          // resolve(data)
-          lines.insertOne(data).then((result) => {
-            // {"n":1,"ok":1}
+        lines.insertOne(data).then((result) => {
+          // {"n":1,"ok":1}
             resolve(result)
           }).catch((err) => {
             reject(err)
           })
+      })
+    },
+    update: ({data, id, owner}) => {
+      delete data._id
+      return new Promise((resolve, reject) => {
+        lines.bulkWrite([
+          { updateOne:
+            {
+              "filter": {_id: ObjectId(id)},
+              "update": data
+            }
+          }
+        ]).then(result => {
+          resolve(result)
+        }).catch(err => {
+          reject(err)
         })
       })
     },
@@ -87,15 +91,6 @@ module.exports = (DB) => {
           resolve(result.result)
         }).catch(err => {
           reject(err)
-        })
-      })
-    },
-    // just a test stub
-    getNextId: () => {
-      return new Promise((resolve, reject) => {
-        getNextId((err, nextId) => {
-          if (err) return reject(err)
-          resolve({ id: nextId })
         })
       })
     }

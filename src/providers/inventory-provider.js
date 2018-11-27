@@ -8,16 +8,6 @@ module.exports = (DB) => {
   db = DB.db
   inventory = db.collection('inventory')
 
-  // suport routines
-  // get next id in the image collection for this owner
-  const getNextId = (cb) => {
-    inventory.find({ owner: owner }, { _id: 0, id: 1 }).sort({ id: -1 }).limit(1).toArray((err, result) => {
-      if (err) return cb(err)
-      let nextId = +result[0].id + 1
-      cb(null, nextId)
-    })
-  }
-
   return {
     getAll: () => {
       return new Promise((resolve, reject) => {
@@ -42,16 +32,11 @@ module.exports = (DB) => {
       console.dir(data)
       data.owner = owner
       return new Promise((resolve, reject) => {
-        getNextId((err, nextId) => {
-          if (err) return reject(err)
-          data.id = nextId
-          // resolve(data)
-          inventory.insertOne(data).then((result) => {
-            // {"n":1,"ok":1}
-            resolve(result)
-          }).catch((err) => {
-            reject(err)
-          })
+        inventory.insertOne(data).then((result) => {
+          // {"n":1,"ok":1}
+          resolve(result)
+        }).catch((err) => {
+          reject(err)
         })
       })
     },
@@ -76,15 +61,6 @@ module.exports = (DB) => {
           resolve(result.result)
         }).catch(err => {
           reject(err)
-        })
-      })
-    },
-    // just a test stub
-    getNextId: () => {
-      return new Promise((resolve, reject) => {
-        getNextId((err, nextId) => {
-          if (err) return reject(err)
-          resolve({ id: nextId })
         })
       })
     }

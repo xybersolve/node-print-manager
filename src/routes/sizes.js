@@ -14,7 +14,7 @@ let sizes = null
 */
 
 
-// return all images
+// return all sizes
 router.get('/', (req, res, next) => {
   sizes.getAll().then(results => {
     res.status(200).json(results);
@@ -29,24 +29,16 @@ router.get('/aspect-ratios', (req, res, next) => {
   }).catch(next)
 })
 
-// test - get next id
-router.get('/next-id', (req, res, next) => {
-  sizes.getNextId().then(result => {
-    console.dir(result)
-    res.status(200).json(result)
-  }).catch(next)
-})
-
-// return image by id
+// return size by id
 router.get('/:id', (req, res, next) => {
   console.log(`route:id: ${req.params.id}`)
-  sizes.get(req.params.id).then(image => {
-    console.dir(image)
-    res.status(200).json(image)
+  sizes.get(req.params.id).then(size => {
+    console.dir(size)
+    res.status(200).json(size)
   }).catch(next)
 })
 
-// create new image - return
+// create new size - return
 router.post('/', (req, res, next) => {
   var opts = {
     owner,

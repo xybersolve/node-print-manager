@@ -13,31 +13,23 @@ let invoices = null
 500 — INTERNAL SERVER ERROR, Unknown server error has occurred
 */
 
-// return all images
+// return all invoices
 router.get('/', (req, res, next) => {
   invoices.getAll().then(results => {
     res.status(200).json(results);
   }).catch(next)
 })
 
-// test - get next id
-router.get('/next-id', (req, res, next) => {
-  invoices.getNextId().then(result => {
-    console.dir(result)
-    res.status(200).json(result)
-  }).catch(next)
-})
-
-// return image by id
+// return invoice by id
 router.get('/:id', (req, res, next) => {
   console.log(`route:id: ${req.params.id}`)
-  invoices.get(req.params.id).then(image => {
-    console.dir(image)
-    res.status(200).json(image)
+  invoices.get(req.params.id).then(invoice => {
+    console.dir(invoice)
+    res.status(200).json(invoice)
   }).catch(next)
 })
 
-// create new image - return
+// create new invoice - return
 router.post('/', (req, res, next) => {
   var opts = {
     owner,
