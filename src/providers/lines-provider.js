@@ -2,28 +2,25 @@ let db = null
 let lines = null
 let ObjectId = null
 
-// using single owner for now
-const owner = 'Greg Milligan'
-
 module.exports = (DB) => {
   db = DB.db
   ObjectId = DB.ObjectId
   lines = db.collection('lines')
 
   return {
-    getAll: () => {
+    getAll: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        lines.find({ owner: owner }).sort({ sortOrder: 1 }).toArray().then((results) => {
+        lines.find({ owner }).sort({ sortOrder: 1 }).toArray().then((results) => {
           resolve(results)
         }).catch((err) => {
           reject(err)
         })
       })
     },
-    getAllBrief: () => {
+    getAllBrief: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        lines.find({ owner: owner },
-                       { name: 1 })
+        lines.find({ owner },
+                   { name: 1 })
                   .sort({ sortOrder: 1 })
                   .toArray()
                   .then((results) => {
@@ -33,26 +30,25 @@ module.exports = (DB) => {
         })
       })
     },
-    getAllActive: () => {
+    getAllActive: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        lines.find({ owner: owner, active: true }).sort({ sortOrder: 1 }).toArray().then((results) => {
+        lines.find({ owner, active: true }).sort({ sortOrder: 1 }).toArray().then((results) => {
           resolve(results)
         }).catch((err) => {
           reject(err)
         })
       })
     },
-    get: (id) => {
-      console.log(`provider:id: ${id}`)
+    get: ({ id }) => {
       return new Promise((resolve, reject) => {
-        lines.findOne({ _id: ObjectId(id), owner: owner }).then(result => {
+        lines.findOne({ _id: ObjectId(id) }).then(result => {
           resolve(result)
         }).catch(err => {
           reject(err)
         })
       })
     },
-    create: ({ data, owner }) => {
+    create: ({ owner, data }) => {
       console.dir(data)
       data.owner = owner
       return new Promise((resolve, reject) => {
@@ -64,7 +60,7 @@ module.exports = (DB) => {
           })
       })
     },
-    update: ({data, id, owner}) => {
+    update: ({ id, data }) => {
       delete data._id
       return new Promise((resolve, reject) => {
         lines.bulkWrite([
@@ -81,11 +77,11 @@ module.exports = (DB) => {
         })
       })
     },
-    delete: ({ id, owner }) => {
+    delete: ({ id }) => {
       // console.log(`provider:id: ${id}, owner: ${owner}`)
       return new Promise((resolve, reject) => {
         lines.deleteOne(
-          { id: id, owner: owner },
+          { _id: ObjectId(id) },
           { w: 0, j: true }).then(result => {
           // {"n":0,"ok":1}
           resolve(result.result)

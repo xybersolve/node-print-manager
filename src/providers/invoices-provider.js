@@ -1,27 +1,25 @@
 let db = null
 let invoice = null
-
-// using single owner from now
-const owner = 'Greg Milligan'
+let ObjectId = null
 
 module.exports = (DB) => {
   db = DB.db
-  invoice = db.collection('invoice')
+  ObjectId = DB.ObjectId
+  invoice = db.collection('invoices')
 
   return {
-    getAll: () => {
+    getAll: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        invoice.find({ owner: owner }).sort({ name: 1 }).toArray().then((results) => {
+        invoice.find({ owner }).sort({ name: 1 }).toArray().then((results) => {
           resolve(results)
         }).catch((err) => {
           reject(err)
         })
       })
     },
-    get: (id) => {
-      console.log(`provider:id: ${id}`)
+    get: ({ id }) => {
       return new Promise((resolve, reject) => {
-        invoice.findOne({ id: +id, owner: owner }).then(image => {
+        invoice.findOne({ _id: ObjectId(id) }).then(image => {
           resolve(image)
         }).catch(err => {
           reject(err)
@@ -29,11 +27,10 @@ module.exports = (DB) => {
       })
     },
     create: ({ data, owner }) => {
-      console.dir(data)
       data.owner = owner
-      delete data._id;
+      delete data._id
+      console.dir(data)
       return new Promise((resolve, reject) => {
-
         invoice.insertOne(data).then((result) => {
           // {"n":1,"ok":1}
           resolve(result)
@@ -53,11 +50,11 @@ module.exports = (DB) => {
         })
       })
     },
-    delete: ({ id, owner }) => {
+    delete: ({ id }) => {
       // console.log(`provider:id: ${id}, owner: ${owner}`)
       return new Promise((resolve, reject) => {
         invoice.deleteOne(
-          { id: id, owner: owner },
+          { _id: ObjectId(id) },
           { w: 0, j: true }).then(result => {
           // {"n":0,"ok":1}
           resolve(result.result)

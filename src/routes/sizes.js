@@ -16,14 +16,14 @@ let sizes = null
 
 // return all sizes
 router.get('/', (req, res, next) => {
-  sizes.getAll().then(results => {
+  sizes.getAll({ owner: req.owner }).then(results => {
     res.status(200).json(results);
   }).catch(next)
 })
 
 // apectRatios
 router.get('/aspect-ratios', (req, res, next) => {
-  sizes.getAspectRatios().then(result => {
+  sizes.getAspectRatios({ owner: req.owner }).then(result => {
     console.dir(result)
     res.status(200).json(result)
   }).catch(next)
@@ -32,29 +32,20 @@ router.get('/aspect-ratios', (req, res, next) => {
 // return size by id
 router.get('/:id', (req, res, next) => {
   console.log(`route:id: ${req.params.id}`)
-  sizes.get(req.params.id).then(size => {
-    console.dir(size)
-    res.status(200).json(size)
+  sizes.get({ id: req.params.id }).then(result => {
+    res.status(200).json(result)
   }).catch(next)
 })
 
 // create new size - return
 router.post('/', (req, res, next) => {
-  var opts = {
-    owner,
-    data: req.body
-  }
-  sizes.create(opts).then(result => {
+  sizes.create({ owner: req.owner, data: req.body }).then(result => {
     res.status(200).json(result)
   }).catch(next)
 })
 
 router.delete('/:id', (req, res, next) => {
-  var opts = {
-    owner,
-    id: req.params.id
-  }
-  sizes.delete(opts).then(result => {
+  sizes.delete({ id: req.params.id }).then(result => {
     // { n: 0, ok: 1 }
     console.log(`route - ok:${result.ok}, n:${result.n}`)
     res.status(200).json(result)

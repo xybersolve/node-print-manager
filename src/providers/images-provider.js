@@ -2,36 +2,31 @@ let db = null
 let ObjectId = null
 let images = null
 
-// using single owner from now
-const owner = 'Greg Milligan'
-
 module.exports = (DB) => {
   db = DB.db
   ObjectId = DB.ObjectId
   images = db.collection('images')
 
   return {
-    getAll: () => {
+    getAll: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        images.find({ owner: owner }).sort({ name: 1 }).toArray().then((results) => {
+        images.find({ owner }).sort({ name: 1 }).toArray().then((results) => {
           resolve(results)
         }).catch((err) => {
           reject(err)
         })
       })
     },
-    get: (id) => {
-      console.log(`provider:id: ${id}`)
+    get: ({ id }) => {
       return new Promise((resolve, reject) => {
-        images.findOne({ _id: ObjectId(id) }).then(image => {
-          resolve(image)
+        images.findOne({ _id: ObjectId(id) }).then(result => {
+          resolve(result)
         }).catch(err => {
           reject(err)
         })
       })
     },
     create: ({ data, owner }) => {
-      console.dir(data)
       data.owner = owner // stubbed functionality
       delete data._id; // mongo will create its own ObjectId
       return new Promise((resolve, reject) => {
@@ -43,13 +38,13 @@ module.exports = (DB) => {
         })
       })
     },
-    update: ({data, id, owner}) => {
+    update: ({ data, id }) => {
       delete data._id
       return new Promise((resolve, reject) => {
         images.bulkWrite([
           { updateOne:
             {
-              "filter": {_id: ObjectId(id)},
+              "filter": { _id: ObjectId(id) },
               "update": data
             }
           }
@@ -60,12 +55,10 @@ module.exports = (DB) => {
         })
       })
     },
-    delete: ({ id, owner }) => {
-      console.log(`delete - id: ${id}, owner: ${owner}`)
-      //images.remove( {"_id": ObjectId(id)});
+    delete: ({ id }) => {
       return new Promise((resolve, reject) => {
         images.deleteOne(
-          { _id: ObjectId(id), owner: owner },
+          { _id: ObjectId(id) },
           { w: 0, j: true }).then(result => {
           // {"n":0,"ok":1}
           resolve(result.result)

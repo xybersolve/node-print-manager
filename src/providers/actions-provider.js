@@ -1,16 +1,16 @@
 let db = null
-let status = null
+let actions = null
 let ObjectId = null
 
 module.exports = (DB) => {
   db = DB.db
   ObjectId = DB.ObjectId
-  status = db.collection('status')
+  actions = db.collection('actions')
 
   return {
     getAll: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        status.find({ owner }).sort({ status: 1 }).toArray().then((results) => {
+        actions.find({ owner }).sort({ name: 1 }).toArray().then((results) => {
           resolve(results)
         }).catch((err) => {
           reject(err)
@@ -19,9 +19,9 @@ module.exports = (DB) => {
     },
     getAllBrief: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        status.find({ owner, active: true },
-                    { status: 1 })
-                  .sort({ status: 1 })
+        actions.find({ owner, active: true },
+                       { name: 1, email: 1, commision: 1 })
+                  .sort({ name: 1 })
                   .toArray()
                   .then((results) => {
           resolve(results)
@@ -32,7 +32,7 @@ module.exports = (DB) => {
     },
     getAllActive: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        status.find({ owner, active: true }).sort({ name: 1 }).toArray().then((results) => {
+        actions.find({ owner, active: true }).sort({ name: 1 }).toArray().then((results) => {
           resolve(results)
         }).catch((err) => {
           reject(err)
@@ -40,20 +40,19 @@ module.exports = (DB) => {
       })
     },
     get: ({ id }) => {
-      console.log(`provider:id: ${id}`)
       return new Promise((resolve, reject) => {
-        status.findOne({ _id: ObjectId(id) }).then(image => {
-          resolve(image)
+        actions.findOne({ _id: ObjectId(id) }).then(result => {
+          console.dir(result)
+          resolve(result)
         }).catch(err => {
           reject(err)
         })
       })
     },
     create: ({ owner, data }) => {
-      console.dir(data)
       data.owner = owner
       return new Promise((resolve, reject) => {
-        status.insertOne(data).then((result) => {
+        actions.insertOne(data).then((result) => {
           // {"n":1,"ok":1}
           resolve(result)
         }).catch((err) => {
@@ -62,9 +61,10 @@ module.exports = (DB) => {
       })
     },
     delete: ({ id }) => {
+      // console.log(`provider:id: ${id}, owner: ${owner}`)
       return new Promise((resolve, reject) => {
-        status.deleteOne(
-          { _id: ObjectId(id) },
+        actions.deleteOne(
+          { id: ObjectId(id) },
           { w: 0, j: true }).then(result => {
           // {"n":0,"ok":1}
           resolve(result.result)

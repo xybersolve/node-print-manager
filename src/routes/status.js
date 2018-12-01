@@ -4,56 +4,44 @@
 const express = require('express')
 const router = express.Router()
 let status = null
-let owner = 'Greg Milligan'
 
 // return all status
 router.get('/', (req, res, next) => {
-  status.getAll().then(results => {
+  status.getAll({ owner: req.owner }).then(results => {
     res.send(results)
   }).catch(next)
 })
 
 // return all brief status
 router.get('/brief', (req, res, next) => {
-  status.getAllBrief().then(results => {
+  status.getAllBrief({ owner: req.owner }).then(results => {
     res.send(results)
   }).catch(next)
 })
 
 router.get('/active', (req, res, next) => {
-  status.getAllActive().then(results => {
+  status.getAllActive({ owner: req.owner }).then(results => {
     res.send(results)
   }).catch(next)
 })
 
 // return status by id
 router.get('/:id', (req, res, next) => {
-  console.log(`route:id: ${req.params.id}`)
-  status.get(req.params.id).then(status => {
-    console.dir(status)
-    res.status(200).json(status)
+  status.get({ id: req.params.id }).then(result => {
+    res.status(200).json(result)
   }).catch(next)
 })
 
 // create new status - return
 router.post('/', (req, res, next) => {
-  var opts = {
-    owner,
-    data: req.body
-  }
-  status.create(opts).then(result => {
+  status.create({ owner: req.owner, data: req.body }).then(result => {
     res.status(200).json(result)
   }).catch(next)
 })
 
 router.delete('/:id', (req, res, next) => {
-  var opts = {
-    owner,
-    id: req.params.id
-  }
-  status.delete(opts).then(result => {
+  status.delete({ id: req.params.id }).then(result => {
     // { n: 0, ok: 1 }
-    console.log(`route - ok:${result.ok}, n:${result.n}`)
     res.status(200).json(result)
   }).catch(next)
 })

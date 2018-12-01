@@ -15,15 +15,15 @@ let invoices = null
 
 // return all invoices
 router.get('/', (req, res, next) => {
-  invoices.getAll().then(results => {
+  invoices.getAll({ owner: req.owner }).then(results => {
     res.status(200).json(results);
   }).catch(next)
 })
 
 // return invoice by id
 router.get('/:id', (req, res, next) => {
-  console.log(`route:id: ${req.params.id}`)
-  invoices.get(req.params.id).then(invoice => {
+  // console.log(`route:id: ${req.params.id}`)
+  invoices.get({ id: req.params.id }).then(invoice => {
     console.dir(invoice)
     res.status(200).json(invoice)
   }).catch(next)
@@ -31,21 +31,13 @@ router.get('/:id', (req, res, next) => {
 
 // create new invoice - return
 router.post('/', (req, res, next) => {
-  var opts = {
-    owner,
-    data: req.body
-  }
-  invoices.create(opts).then(result => {
+  invoices.create({ owner: req.owner, data: req.body }).then(result => {
     res.status(200).json(result)
   }).catch(next)
 })
 
 router.delete('/:id', (req, res, next) => {
-  var opts = {
-    owner,
-    id: req.params.id
-  }
-  invoices.delete(opts).then(result => {
+  invoices.delete({ id: req.params.id }).then(result => {
     // { n: 0, ok: 1 }
     console.log(`route - ok:${result.ok}, n:${result.n}`)
     res.status(200).json(result)
