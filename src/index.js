@@ -24,7 +24,7 @@ const errorHandlers = require('./middleware/errorHandlers')
 checkVersion()
 
 const routeSetup = (DB) => {
-  // embed db in router request 
+  // embed db in router request
   const dbHook = dbHookFactory(DB)
   const authHook = authHookFactory('Greg Milligan')
   server.use(bodyParser.urlencoded({
@@ -45,6 +45,7 @@ const routeSetup = (DB) => {
   server.use(`${restBase}/actions`, dbHook, authHook, require('./routes/actions')(DB))
   server.use(`${restBase}/lines`, dbHook, authHook, require('./routes/lines')(DB))
   server.use(`${restBase}/status`, dbHook, authHook, require('./routes/status')(DB))
+  server.use(`${restBase}/inventory`, dbHook, authHook, require('./routes/inventory')(DB))
 
 }
 
