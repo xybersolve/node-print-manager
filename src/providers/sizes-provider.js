@@ -10,7 +10,10 @@ module.exports = (DB) => {
   return {
     getAll: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        sizes.find({ owner }).sort({ volume: 1 }).toArray().then((results) => {
+        sizes.find({ owner: owner },
+                   { projection:{ size: 1, ratio: 1, volume: 1, owner: 1, active: 1 } })
+              .sort({ratio:1, volume: 1})
+             .toArray().then(results => {
           resolve(results)
         }).catch((err) => {
           reject(err)
@@ -43,6 +46,40 @@ module.exports = (DB) => {
           // {"n":1,"ok":1}
           resolve(result)
         }).catch((err) => {
+          reject(err)
+        })
+      })
+    },
+    setDefault: ({ owner, id }) => {
+      return new Promise((resolve, reject) => {
+        // set all owners defaults to false
+        // set selected entity default to true
+        sizes.updateMany({owner: owner},{$set: {default: false}}).then(result => {
+          sizes.updateOne({_id: ObjectId(id)}, {$set: {default: true}}).then(result => {
+            resolve(result)
+          }).catch((err => {
+            reject(err)
+          }))
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    update: ({ id, data }) => {
+      delete data._id
+      console.log('size.update()')
+      console.dir(data)
+      return new Promise((resolve, reject) => {
+        sizes.bulkWrite([
+          { updateOne:
+            {
+              "filter": {_id: ObjectId(id)},
+              "update": data
+            }
+          }
+        ]).then(result => {
+          resolve(result)
+        }).catch(err => {
           reject(err)
         })
       })

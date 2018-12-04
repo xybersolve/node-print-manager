@@ -44,6 +44,21 @@ router.post('/', (req, res, next) => {
   }).catch(next)
 })
 
+// set default entity for owner
+router.put('/default/:id', (req, res, next) => {
+  console.log('put default')
+  sizes.setDefault({ owner: req.owner, id: req.params.id }).then(result => {
+    res.status(200).json(result)
+  }).catch(next)
+})
+
+// update existing aspect ratio
+router.put('/:id', (req, res, next) => {
+  sizes.update({ owner: req.owner, id: req.params.id, data: req.body }).then(result => {
+    res.status(200).json(result)
+  }).catch(next)
+})
+
 router.delete('/:id', (req, res, next) => {
   sizes.delete({ id: req.params.id }).then(result => {
     // { n: 0, ok: 1 }

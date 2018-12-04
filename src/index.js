@@ -39,6 +39,7 @@ const routeSetup = (DB) => {
   // REST domains
   server.use(`${restBase}/images`, dbHook, authHook, require('./routes/images')(DB))
   server.use(`${restBase}/sizes`, dbHook, authHook, require('./routes/sizes')(DB))
+  server.use(`${restBase}/aspect-ratios`, dbHook, authHook, require('./routes/aspect-ratios')(DB))
   server.use(`${restBase}/materials`, dbHook, authHook, require('./routes/materials')(DB))
   server.use(`${restBase}/locations`, dbHook, authHook, require('./routes/locations')(DB))
   server.use(`${restBase}/invoices`, dbHook, authHook, require('./routes/invoices')(DB))

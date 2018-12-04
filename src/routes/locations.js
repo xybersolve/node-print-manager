@@ -41,6 +41,21 @@ router.post('/', (req, res, next) => {
   }).catch(next)
 })
 
+// update existing location - void return
+router.put('/:id', (req, res, next) => {
+  locations.update({ id: req.params.id, data: req.body }).then(result => {
+    res.status(200).json(result)
+  }).catch(next)
+})
+
+// set default entity for owner
+router.put('/default/:id', (req, res, next) => {
+  console.log('put default')
+  locations.setDefault({ owner: req.owner, id: req.params.id }).then(result => {
+    res.status(200).json(result)
+  }).catch(next)
+})
+
 router.delete('/:id', (req, res, next) => {
   locations.delete({ id: req.params.id }).then(result => {
     // { n: 0, ok: 1 }

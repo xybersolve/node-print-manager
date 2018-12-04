@@ -1,16 +1,16 @@
 let db = null
-let lines = null
+let aspectRatios = null
 let ObjectId = null
 
 module.exports = (DB) => {
   db = DB.db
   ObjectId = DB.ObjectId
-  lines = db.collection('lines')
+  aspectRatios = db.collection('aspectRatios')
 
   return {
     getAll: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        lines.find({ owner }).sort({ sortOrder: 1 }).toArray().then((results) => {
+        aspectRatios.find({ owner }).sort({ name: 1 }).toArray().then((results) => {
           resolve(results)
         }).catch((err) => {
           reject(err)
@@ -19,9 +19,9 @@ module.exports = (DB) => {
     },
     getAllBrief: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        lines.find({ owner },
-                   { name: 1 })
-                  .sort({ sortOrder: 1 })
+        aspectRatios.find({ owner, active: true },
+                       { name: 1, email: 1, commision: 1 })
+                  .sort({ name: 1 })
                   .toArray()
                   .then((results) => {
           resolve(results)
@@ -32,7 +32,7 @@ module.exports = (DB) => {
     },
     getAllActive: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        lines.find({ owner, active: true }).sort({ sortOrder: 1 }).toArray().then((results) => {
+        aspectRatios.find({ owner, active: true }).sort({ name: 1 }).toArray().then((results) => {
           resolve(results)
         }).catch((err) => {
           reject(err)
@@ -41,7 +41,8 @@ module.exports = (DB) => {
     },
     get: ({ id }) => {
       return new Promise((resolve, reject) => {
-        lines.findOne({ _id: ObjectId(id) }).then(result => {
+        aspectRatios.findOne({ _id: ObjectId(id) }).then(result => {
+          console.dir(result)
           resolve(result)
         }).catch(err => {
           reject(err)
@@ -49,21 +50,35 @@ module.exports = (DB) => {
       })
     },
     create: ({ owner, data }) => {
-      console.dir(data)
       data.owner = owner
       return new Promise((resolve, reject) => {
-        lines.insertOne(data).then((result) => {
+        aspectRatios.insertOne(data).then((result) => {
           // {"n":1,"ok":1}
+          resolve(result)
+        }).catch((err) => {
+          reject(err)
+        })
+      })
+    },
+    setDefault: ({ owner, id }) => {
+      return new Promise((resolve, reject) => {
+        // set all owners defaults to false
+        // set selected entity default to true
+        aspectRatios.updateMany({owner: owner},{$set: {default: false}}).then(result => {
+          aspectRatios.updateOne({_id: ObjectId(id)}, {$set: {default: true}}).then(result => {
             resolve(result)
-          }).catch((err) => {
+          }).catch((err => {
             reject(err)
-          })
+          }))
+        }).catch(err => {
+          reject(err)
+        })
       })
     },
     update: ({ id, data }) => {
       delete data._id
       return new Promise((resolve, reject) => {
-        lines.bulkWrite([
+        aspectRatios.bulkWrite([
           { updateOne:
             {
               "filter": {_id: ObjectId(id)},
@@ -77,26 +92,11 @@ module.exports = (DB) => {
         })
       })
     },
-    setDefault: ({ owner, id }) => {
-      return new Promise((resolve, reject) => {
-        // set all owners defaults to false
-        // set selected entity default to true
-        lines.updateMany({owner: owner},{$set: {default: false}}).then(result => {
-          lines.updateOne({_id: ObjectId(id)}, {$set: {default: true}}).then(result => {
-            resolve(result)
-          }).catch((err => {
-            reject(err)
-          }))
-        }).catch(err => {
-          reject(err)
-        })
-      })
-    },
     delete: ({ id }) => {
       // console.log(`provider:id: ${id}, owner: ${owner}`)
       return new Promise((resolve, reject) => {
-        lines.deleteOne(
-          { _id: ObjectId(id) },
+        aspectRatios.deleteOne(
+          { id: ObjectId(id) },
           { w: 0, j: true }).then(result => {
           // {"n":0,"ok":1}
           resolve(result.result)

@@ -60,6 +60,21 @@ module.exports = (DB) => {
         })
       })
     },
+    setDefault: ({ owner, id }) => {
+      return new Promise((resolve, reject) => {
+        // set all owners defaults to false
+        // set selected entity default to true
+        actions.updateMany({owner: owner},{$set: {default: false}}).then(result => {
+          actions.updateOne({_id: ObjectId(id)}, {$set: {default: true}}).then(result => {
+            resolve(result)
+          }).catch((err => {
+            reject(err)
+          }))
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
     delete: ({ id }) => {
       // console.log(`provider:id: ${id}, owner: ${owner}`)
       return new Promise((resolve, reject) => {

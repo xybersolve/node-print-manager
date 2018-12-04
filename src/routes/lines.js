@@ -39,12 +39,21 @@ router.post('/', (req, res, next) => {
   }).catch(next)
 })
 
-// update existing line - void return
+// update existing line
 router.put('/:id', (req, res, next) => {
   lines.update({ owner: req.owner, id: req.params.id, data: req.body }).then(result => {
     res.status(200).json(result)
   }).catch(next)
 })
+
+// set default entity for owner
+router.put('/default/:id', (req, res, next) => {
+  console.log('put default')
+  locations.setDefault({ owner: req.owner, id: req.params.id }).then(result => {
+    res.status(200).json(result)
+  }).catch(next)
+})
+
 
 router.delete('/:id', (req, res, next) => {
   lines.delete({ id: req.params.id }).then(result => {

@@ -1,0 +1,13 @@
+//
+// Data Management Routines
+//
+// set all location default for owner to false
+db.locations.updateMany({owner:'Greg Milligan'},{$set: {default: false}})
+db.locations.find({owner: 'Greg Milligan'}, {name: 1, default: 1})
+// lines defaults
+db.lines.updateMany({owner:'Greg Milligan'},{$set: {default: false}})
+// materials
+db.materials.updateMany({},{$set:{active:false}})
+db.materials.updateMany({},{$set:{default:false}})
+
+db.sizes.updateMany({},{$set:{active:false}})

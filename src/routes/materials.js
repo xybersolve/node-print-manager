@@ -12,6 +12,19 @@ router.get('/', (req, res, next) => {
   }).catch(next)
 })
 
+// set default entity for owner
+router.put('/default/:id', (req, res, next) => {
+  materials.setDefault({ owner: req.owner, id: req.params.id }).then(result => {
+    res.status(200).json(result)
+  }).catch(next)
+})
+
+// update existing material
+router.put('/:id', (req, res, next) => {
+  materials.update({ owner: req.owner, id: req.params.id, data: req.body }).then(result => {
+    res.status(200).json(result)
+  }).catch(next)
+})
 
 module.exports = (DB) => {
   materials = require('../providers/materials-provider')(DB)

@@ -3,24 +3,24 @@
 */
 const express = require('express')
 const router = express.Router()
-let actions = null
+let aspectRatios = null
 
-// return all actions
+// return all aspectRatios
 router.get('/', (req, res, next) => {
-  actions.getAll({ owner: req.owner }).then(results => {
+  aspectRatios.getAll({ owner: req.owner }).then(results => {
     res.send(results)
   }).catch(next)
 })
 
-// return all brief actions
+// return all brief aspectRatios
 router.get('/brief', (req, res, next) => {
-  actions.getAllBrief({ owner: req.owner }).then(results => {
+  aspectRatios.getAllBrief({ owner: req.owner }).then(results => {
     res.send(results)
   }).catch(next)
 })
 
 router.get('/active', (req, res, next) => {
-  actions.getAllActive({ owner: req.owner }).then(results => {
+  aspectRatios.getAllActive({ owner: req.owner }).then(results => {
     res.send(results)
   }).catch(next)
 })
@@ -28,7 +28,7 @@ router.get('/active', (req, res, next) => {
 // return location by id
 router.get('/:id', (req, res, next) => {
   // console.log(`route:id: ${req.params.id}`)
-  actions.get({ id: req.params.id }).then(location => {
+  aspectRatios.get({ id: req.params.id }).then(location => {
     console.dir(location)
     res.status(200).json(location)
   }).catch(next)
@@ -36,20 +36,27 @@ router.get('/:id', (req, res, next) => {
 
 // create new location - return
 router.post('/', (req, res, next) => {
-  actions.create({ owner: req.owner, data: req.body }).then(result => {
+  aspectRatios.create({ owner: req.owner, data: req.body }).then(result => {
     res.status(200).json(result)
   }).catch(next)
 })
 
 // set default entity for owner
 router.put('/default/:id', (req, res, next) => {
-  actions.setDefault({ owner: req.owner, id: req.params.id }).then(result => {
+  aspectRatios.setDefault({ owner: req.owner, id: req.params.id }).then(result => {
+    res.status(200).json(result)
+  }).catch(next)
+})
+
+// update existing aspect ratio
+router.put('/:id', (req, res, next) => {
+  aspectRatios.update({ owner: req.owner, id: req.params.id, data: req.body }).then(result => {
     res.status(200).json(result)
   }).catch(next)
 })
 
 router.delete('/:id', (req, res, next) => {
-  actions.delete({ id: req.params.id }).then(result => {
+  aspectRatios.delete({ id: req.params.id }).then(result => {
     // { n: 0, ok: 1 }
     console.log(`route - ok:${result.ok}, n:${result.n}`)
     res.status(200).json(result)
@@ -57,6 +64,6 @@ router.delete('/:id', (req, res, next) => {
 })
 
 module.exports = (DB) => {
-  actions = require('../providers/actions-provider')(DB)
+  aspectRatios = require('../providers/aspect-ratios-provider')(DB)
   return router
 }
