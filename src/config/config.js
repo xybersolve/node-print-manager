@@ -6,7 +6,7 @@ const PORT = env.PORT || 7070
 // const serverUrl = `http://${this.host}:${this.port}`
 const apiVersion = 'v1'
 const restBase = `/api/${apiVersion}`
-
+const secret = 'lkhaepoiloirgnsvlksergcaerf'
 const mongo = {
   username: 'myname',
   password: 'password',
@@ -24,6 +24,7 @@ const mongo = {
 module.exports = {
   nodeEnv,
   apiVersion,
+  secret,
   restBase,
   mongo,
   PORT,

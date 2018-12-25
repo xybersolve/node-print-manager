@@ -10,33 +10,37 @@ module.exports = (DB) => {
   return {
     getAll: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        lines.find({ owner }).sort({ sortOrder: 1 }).toArray().then((results) => {
-          resolve(results)
-        }).catch((err) => {
-          reject(err)
-        })
+        lines.find({ owner }, { name: 1, owner: 1, description: 1, active: 1, default: 1 })
+          .sort({ name: 1 })
+          .toArray().then(results => {
+            resolve(results)
+          }).catch(err => {
+            reject(err)
+          })
       })
     },
     getAllBrief: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        lines.find({ owner },
-                   { name: 1 })
-                  .sort({ sortOrder: 1 })
-                  .toArray()
-                  .then((results) => {
-          resolve(results)
-        }).catch((err) => {
-          reject(err)
-        })
+        lines.find({ owner: owner }, { projection: { name: 1, active: 1, default: 1, _id: 0 } })
+          .sort({ name: 1 })
+          .toArray()
+          .then(results => {
+            resolve(results)
+          }).catch(err => {
+            reject(err)
+          })
       })
     },
-    getAllActive: ({ owner }) => {
+    getActiveBrief: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        lines.find({ owner, active: true }).sort({ sortOrder: 1 }).toArray().then((results) => {
-          resolve(results)
-        }).catch((err) => {
-          reject(err)
-        })
+        lines.find({ owner: owner, active: true },
+          { projection: { name: 1, default: 1, active: 1, _id: 0 } })
+          .sort({ name: 1 })
+          .toArray().then(results => {
+            resolve(results)
+          }).catch((err) => {
+            reject(err)
+          })
       })
     },
     get: ({ id }) => {
@@ -52,12 +56,12 @@ module.exports = (DB) => {
       console.dir(data)
       data.owner = owner
       return new Promise((resolve, reject) => {
-        lines.insertOne(data).then((result) => {
+        lines.insertOne(data).then(result => {
           // {"n":1,"ok":1}
-            resolve(result)
-          }).catch((err) => {
-            reject(err)
-          })
+          resolve(result)
+        }).catch(err => {
+          reject(err)
+        })
       })
     },
     update: ({ id, data }) => {
@@ -66,8 +70,8 @@ module.exports = (DB) => {
         lines.bulkWrite([
           { updateOne:
             {
-              "filter": {_id: ObjectId(id)},
-              "update": data
+              'filter': { _id: ObjectId(id) },
+              'update': data
             }
           }
         ]).then(result => {
@@ -81,12 +85,12 @@ module.exports = (DB) => {
       return new Promise((resolve, reject) => {
         // set all owners defaults to false
         // set selected entity default to true
-        lines.updateMany({owner: owner},{$set: {default: false}}).then(result => {
-          lines.updateOne({_id: ObjectId(id)}, {$set: {default: true}}).then(result => {
+        lines.updateMany({ owner: owner }, { $set: { default: false } }).then(result => {
+          lines.updateOne({ _id: ObjectId(id) }, { $set: { default: true } }).then(result => {
             resolve(result)
-          }).catch((err => {
+          }).catch(err => {
             reject(err)
-          }))
+          })
         }).catch(err => {
           reject(err)
         })

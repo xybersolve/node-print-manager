@@ -8,7 +8,7 @@ let inventory = null
 // return all inventory
 router.get('/', (req, res, next) => {
   inventory.getAll({ owner: req.owner }).then(results => {
-    res.status(200).json(results);
+    res.status(200).json(results)
   }).catch(next)
 })
 
@@ -27,7 +27,6 @@ router.post('/', (req, res, next) => {
     res.status(200).json(result)
   }).catch(next)
 })
-
 
 // update exisitng inventory item
 router.put('/:id', (req, res, next) => {

@@ -5,19 +5,10 @@ const express = require('express')
 const router = express.Router()
 let sizes = null
 
-/*
-200 — OK, The request was successful
-201 — CREATED, A new resource object was successfully created
-404 — NOT FOUND, The requested resource could not be found
-400 —BAD REQUEST, The request was malformed or invalid
-500 — INTERNAL SERVER ERROR, Unknown server error has occurred
-*/
-
-
 // return all sizes
 router.get('/', (req, res, next) => {
   sizes.getAll({ owner: req.owner }).then(results => {
-    res.status(200).json(results);
+    res.status(200).json(results)
   }).catch(next)
 })
 

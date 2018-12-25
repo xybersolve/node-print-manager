@@ -10,33 +10,38 @@ module.exports = (DB) => {
   return {
     getAll: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        aspectRatios.find({ owner }).sort({ name: 1 }).toArray().then((results) => {
-          resolve(results)
-        }).catch((err) => {
-          reject(err)
-        })
+        aspectRatios.find({ owner: owner }, { ratio: 1, default: 1, active: 1, owner: 1 })
+          .sort({ ratio: 1 })
+          .toArray()
+          .then(results => {
+            resolve(results)
+          }).catch(err => {
+            reject(err)
+          })
       })
     },
     getAllBrief: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        aspectRatios.find({ owner, active: true },
-                       { name: 1, email: 1, commision: 1 })
-                  .sort({ name: 1 })
-                  .toArray()
-                  .then((results) => {
-          resolve(results)
-        }).catch((err) => {
-          reject(err)
-        })
+        aspectRatios.find({ owner: owner }, { ratio: 1, active: 1, default: 1 })
+          .sort({ ratio: 1 })
+          .toArray()
+          .then(results => {
+            resolve(results)
+          }).catch(err => {
+            reject(err)
+          })
       })
     },
     getAllActive: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        aspectRatios.find({ owner, active: true }).sort({ name: 1 }).toArray().then((results) => {
-          resolve(results)
-        }).catch((err) => {
-          reject(err)
-        })
+        aspectRatios.find({ owner, active: true })
+          .sort({ name: 1 })
+          .toArray()
+          .then(results => {
+            resolve(results)
+          }).catch(err => {
+            reject(err)
+          })
       })
     },
     get: ({ id }) => {
@@ -55,7 +60,7 @@ module.exports = (DB) => {
         aspectRatios.insertOne(data).then((result) => {
           // {"n":1,"ok":1}
           resolve(result)
-        }).catch((err) => {
+        }).catch(err => {
           reject(err)
         })
       })
@@ -64,12 +69,12 @@ module.exports = (DB) => {
       return new Promise((resolve, reject) => {
         // set all owners defaults to false
         // set selected entity default to true
-        aspectRatios.updateMany({owner: owner},{$set: {default: false}}).then(result => {
-          aspectRatios.updateOne({_id: ObjectId(id)}, {$set: {default: true}}).then(result => {
+        aspectRatios.updateMany({ owner: owner }, { $set: { default: false } }).then(result => {
+          aspectRatios.updateOne({ _id: ObjectId(id) }, { $set: { default: true } }).then(result => {
             resolve(result)
-          }).catch((err => {
+          }).catch(err => {
             reject(err)
-          }))
+          })
         }).catch(err => {
           reject(err)
         })
@@ -81,8 +86,8 @@ module.exports = (DB) => {
         aspectRatios.bulkWrite([
           { updateOne:
             {
-              "filter": {_id: ObjectId(id)},
-              "update": data
+              'filter': { _id: ObjectId(id) },
+              'update': data
             }
           }
         ]).then(result => {

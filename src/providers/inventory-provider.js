@@ -10,11 +10,13 @@ module.exports = (DB) => {
   return {
     getAll: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        inventory.find({ owner }).sort({ size: 1, name: 1 }).toArray().then((results) => {
-          resolve(results)
-        }).catch((err) => {
-          reject(err)
-        })
+        inventory.find({ owner }).sort({ size: 1, name: 1 })
+          .toArray()
+          .then(results => {
+            resolve(results)
+          }).catch(err => {
+            reject(err)
+          })
       })
     },
     get: ({ id }) => {
@@ -31,20 +33,20 @@ module.exports = (DB) => {
       console.dir(data)
       data.owner = owner
       return new Promise((resolve, reject) => {
-        inventory.insertOne(data).then((result) => {
+        inventory.insertOne(data).then(result => {
           // {"n":1,"ok":1}
           resolve(result)
-        }).catch((err) => {
+        }).catch(err => {
           reject(err)
         })
       })
     },
-    addTo: ({owner, items}) => {
+    addTo: ({ owner, items }) => {
       return new Promise((resolve, reject) => {
         inventory.insertMany(items).then((result) => {
           // {"n":1,"ok":1}
           resolve(result)
-        }).catch((err) => {
+        }).catch(err => {
           reject(err)
         })
       })
@@ -55,8 +57,8 @@ module.exports = (DB) => {
         inventory.bulkWrite([
           { updateOne:
             {
-              "filter": { _id: ObjectId(id) },
-              "update": data
+              'filter': { _id: ObjectId(id) },
+              'update': data
             }
           }
         ]).then(result => {
@@ -71,7 +73,7 @@ module.exports = (DB) => {
       return new Promise((resolve, reject) => {
         inventory.deleteOne(
           { _id: ObjectId(id) },
-          { w: 1 , j: true}).then(result => {
+          { w: 1, j: true }).then(result => {
           // {"n":0,"ok":1}
           resolve(result.result)
         }).catch(err => {

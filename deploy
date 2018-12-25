@@ -65,6 +65,7 @@ declare -r SYNTAX=$(cat <<EOF
       --local: Local install on server
       --copy: Use scp for simple copy to server
       --sync: Use rsync for project copy to the server
+      --sync-data: Sync data up to server
       --clone: Clone project from repository
       --all: Run: clone, install and run
 
@@ -89,9 +90,11 @@ declare -i COPY=${FALSE}
 declare -i CLEAN_LOCAL=${FALSE}
 declare -i CLEAN_REMOTE=${FALSE}
 declare -i SYNC=${FALSE}
+declare -i SYNC_DATA=${FALSE}
 declare -i MONGO_BACKUP=${FALSE}
 declare -i MONGO_RESTORE=${FALSE}
 declare -i MONGO_STATS=${FALSE}
+declare -i UP=${FALSE}
 
 # script globals
 COLLECTION=''
@@ -152,7 +155,7 @@ __ssh_config() {
 
 __clean_remote() {
   local -r host="$( __build_host )"
-  ssh -o StrictHostKeyChecking=no "${host}" "rm -rf ${APP_DIRECTORY}"
+  ssh -o StrictHostKeyChecking=no "${host}" "rm -rf ${REMOTE_APP_DIRECTORY}"
 }
 
 __clean_local() {
@@ -191,16 +194,43 @@ __all() {
   __run
 }
 
+__owner() {
+  local -r host=$(__build_host)
+  local -r owner="${1:=ubuntu}"
+  # echo ssh -o StrictHostKeyChecking=no ${host} "[[ -d ${REMOTE_APP_DIRECTORY} ]] || sudo mkdir -p ${REMOTE_APP_DIRECTORY}"
+  ssh -o StrictHostKeyChecking=no ${host} "sudo chown -R ${owner}:${owner} ${REMOTE_BASE_DIRECTORY}"
+}
+
+__perms() {
+  local -r host=$(__build_host)
+  ssh -o StrictHostKeyChecking=no ${host} "find ${REMOTE_APP_DIRECTORY} -type d -exec sudo chmod -R 755 {} \;"
+  ssh -o StrictHostKeyChecking=no ${host} "find ${REMOTE_APP_DIRECTORY} -type f -exec sudo chmod -R 644 {} \;"
+}
+
+__set_perms() {
+  echo "set directory & files permissions"
+  __owner "ubuntu"
+  __perms
+}
+
+__reset_perms() {
+  echo "reset directory & file permissions"
+  __owner "node"
+  __perms
+}
+
 __sync() {
   echo "rsync to server"
-  local -r dir='/home/ubuntu/node/print-manager'
+  local -r host=$(__build_host)
+  local -r dir=${REMOTE_APP_DIRECTORY}
+  # ensure project directory exists
+  ssh -o StrictHostKeyChecking=no ${host} "[[ -d ${dir} ]] || sudo mkdir -p ${dir}"
 
-  # create project directory
-  ssh -o StrictHostKeyChecking=no control 'mkdir -p /home/ubuntu/node/print-manager'
-  # copy without git tree
-  # rsync -avr --exclude 'node_modules' --exclude '.git' . control:${dir}
-  # copy with git tree
-  rsync -avr --exclude 'node_modules' . control:${dir}
+  __set_perms
+
+  rsync -avr --exclude 'node_modules' . ${HOST}:${dir}
+
+  __reset_perms
 }
 # sudo find ${SITE_PATH} -type d -print0 | xargs -0 -I{} chmod 755 {}
 # sudo find ./${WP_DOWNLOAD_DIR} !-name *.zip -maxdepth 1 -type f -print0 \
@@ -209,15 +239,31 @@ __sync() {
 __copy() {
   local host="$( __build_host )"
 
-  ssh -o StrictHostKeyChecking=no "${host}" "[[ -d ${APP_DIRECTORY} ]] || mkdir -p ${APP_DIRECTORY}"
+  ssh -o StrictHostKeyChecking=no "${host}" "[[ -d ${REMOTE_APP_DIRECTORY} ]] || mkdir -p ${REMOTE_APP_DIRECTORY}"
 
-  # all first level directories
+  __set_perms
+
+  # all first level files in project
   find . -type f -maxdepth 1 -print0 \
-    | xargs -0 -I{} scp -o StrictHostKeyChecking=no {} ${host}:${APP_DIRECTORY}
+    | xargs -0 -I{} scp -o StrictHostKeyChecking=no {} ${host}:${REMOTE_APP_DIRECTORY}
 
-  # directories in project source
+  # all directories in project
   find ./src -type d  -print0 \
-    | xargs -0 -I{} scp -r -o StrictHostKeyChecking=no {} ${host}:${APP_DIRECTORY}
+    | xargs -0 -I{} scp -r -o StrictHostKeyChecking=no {} ${host}:${REMOTE_APP_DIRECTORY}
+
+  __reset_perms
+}
+
+__sync_data() {
+  local -r dir=/data/db
+  local -r host=$(__build_host)
+  ssh -o StrictHostKeyChecking=no ${host} "[[ -d ${dir} ]] || sudo mkdir -p ${dir}"
+  rsync -avr ${dir} ${HOST}:${dir}
+}
+
+__up() {
+  local host=$(__build_host)
+  ssh -o StrictHostKeyChecking=no "${host}" "cd ${REMOTE_APP_DIRECTORY} && npm i && npm run start:prod"
 }
 
 __remote() {
@@ -286,6 +332,8 @@ __get_opts() {
       --local)            LOCAL=${TRUE}   ;;
       --copy)             COPY=${TRUE}    ;;
       --sync)             SYNC=${TRUE}    ;;
+      --sync-data)   SYNC_DATA=${TRUE}    ;;
+      --up)                 UP=${TRUE}    ;;
       # mongo
       --mongo-backup*)      MONGO_BACKUP=${TRUE}
         [[ ${arg} =~ '=' ]] && COLLECTION="${arg#*=}"
@@ -311,6 +359,8 @@ __dispatch() {
   (( LOCAL )) && __local
   (( COPY )) && __copy
   (( SYNC )) && __sync
+  (( SYNC_DATA )) && __sync_data
+  (( UP )) && __up
   # mongo routines
   (( MONGO_BACKUP )) && __mongo_backup
   (( MONGO_RESTORE )) && __mongo_restore

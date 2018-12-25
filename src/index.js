@@ -47,11 +47,12 @@ const routeSetup = (DB) => {
   server.use(`${restBase}/lines`, dbHook, authHook, require('./routes/lines')(DB))
   server.use(`${restBase}/status`, dbHook, authHook, require('./routes/status')(DB))
   server.use(`${restBase}/inventory`, dbHook, authHook, require('./routes/inventory')(DB))
-
+  server.use(`${restBase}/users`, dbHook, authHook, require('./routes/users')(DB))
 }
 
 const errorSetup = () => {
   server.use(errorHandlers.notFound)
+  server.use(errorHandlers.authenticationError)
   if (server.get('env') === 'development') {
     server.use(errorHandlers.developmentErrors)
   }

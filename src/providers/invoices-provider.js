@@ -11,10 +11,9 @@ module.exports = (DB) => {
   return {
     getAll: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        invoice.find({ owner }).sort({ name: 1 }).toArray().then((results) => {
-          console.dir(results)
+        invoice.find({ owner }).sort({ name: 1 }).toArray().then(results => {
           resolve(results)
-        }).catch((err) => {
+        }).catch(err => {
           reject(err)
         })
       })
@@ -31,15 +30,14 @@ module.exports = (DB) => {
     create: ({ data, owner }) => {
       data.owner = owner
       delete data._id
-      console.dir(data)
       return new Promise((resolve, reject) => {
         invoice.insertOne(data).then(result => {
           // check result? {"n":1,"ok":1}
           // add invoiceId (created above) into each item objects
-          const items = data.items.map(item => {invoiceId: result._id}, ...item)
-          switch(data.action) {
+          const items = data.items.map(item => { invoiceId: result._id, ...item })
+          switch (data.action) {
             case 'Delivered':
-              console.log('put items into inventory');
+              console.log('put items into inventory')
               inventory.insertMany(items).then(result => {
                 resolve(data)
               }).catch(err => {
@@ -47,14 +45,14 @@ module.exports = (DB) => {
               })
               break
             case 'Sold':
-              console.log('take items out of inventory');
+              console.log('take items out of inventory')
               resolve(data)
               break
             default:
               console.log(`Unhandled action: ${data.action}`)
               resolve(data)
-            }
-        }).catch((err) => {
+          }
+        }).catch(err => {
           // insert invoice error
           reject(err)
         })
@@ -66,8 +64,8 @@ module.exports = (DB) => {
         invoice.bulkWrite([
           { updateOne:
             {
-              "filter": {_id: ObjectId(id)},
-              "update": data
+              'filter': { _id: ObjectId(id) },
+              'update': data
             }
           }
         ]).then(result => {

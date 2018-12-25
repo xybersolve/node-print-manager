@@ -10,11 +10,14 @@ module.exports = (DB) => {
   return {
     getAll: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        images.find({ owner }).sort({ name: 1 }).toArray().then((results) => {
-          resolve(results)
-        }).catch((err) => {
-          reject(err)
-        })
+        images.find({ owner })
+          .sort({ name: 1 })
+          .toArray()
+          .then(results => {
+            resolve(results)
+          }).catch(err => {
+            reject(err)
+          })
       })
     },
     get: ({ id }) => {
@@ -28,12 +31,12 @@ module.exports = (DB) => {
     },
     create: ({ data, owner }) => {
       data.owner = owner // stubbed functionality
-      delete data._id; // mongo will create its own ObjectId
+      delete data._id // mongo will create its own ObjectId
       return new Promise((resolve, reject) => {
-        images.insertOne(data, {w:1}).then((result) => {
+        images.insertOne(data, { w: 1 }).then(result => {
           // {"n":1,"ok":1}
           resolve(result)
-        }).catch((err) => {
+        }).catch(err => {
           reject(err)
         })
       })
@@ -44,8 +47,8 @@ module.exports = (DB) => {
         images.bulkWrite([
           { updateOne:
             {
-              "filter": { _id: ObjectId(id) },
-              "update": data
+              'filter': { _id: ObjectId(id) },
+              'update': data
             }
           }
         ]).then(result => {

@@ -19,8 +19,8 @@ router.get('/brief', (req, res, next) => {
   }).catch(next)
 })
 
-router.get('/active', (req, res, next) => {
-  lines.getAllActive({ owner: req.owner }).then(results => {
+router.get('/active/brief', (req, res, next) => {
+  lines.getActiveBrief({ owner: req.owner }).then(results => {
     res.send(results)
   }).catch(next)
 })
@@ -49,11 +49,10 @@ router.put('/:id', (req, res, next) => {
 // set default entity for owner
 router.put('/default/:id', (req, res, next) => {
   console.log('put default')
-  locations.setDefault({ owner: req.owner, id: req.params.id }).then(result => {
+  lines.setDefault({ owner: req.owner, id: req.params.id }).then(result => {
     res.status(200).json(result)
   }).catch(next)
 })
-
 
 router.delete('/:id', (req, res, next) => {
   lines.delete({ id: req.params.id }).then(result => {

@@ -1,5 +1,5 @@
 let db = null
-let images = null
+let sizes = null
 let ObjectId = null
 
 module.exports = (DB) => {
@@ -11,20 +11,20 @@ module.exports = (DB) => {
     getAll: ({ owner }) => {
       return new Promise((resolve, reject) => {
         sizes.find({ owner: owner },
-                   { projection:{ size: 1, ratio: 1, volume: 1, owner: 1, active: 1 } })
-              .sort({ratio:1, volume: 1})
-             .toArray().then(results => {
-          resolve(results)
-        }).catch((err) => {
-          reject(err)
-        })
+          { projection: { size: 1, ratio: 1, volume: 1, owner: 1, active: 1 } })
+          .sort({ ratio: 1, volume: 1 })
+          .toArray().then(results => {
+            resolve(results)
+          }).catch(err => {
+            reject(err)
+          })
       })
     },
     getAspectRatios: () => {
       return new Promise((resolve, reject) => {
         sizes.distinct('ratio').then(results => {
-          resolve(results.map(result => { return {'ratio': result}}))
-        }).catch((err) => {
+          resolve(results.map(result => { return { 'ratio': result } }))
+        }).catch(err => {
           reject(err)
         })
       })
@@ -42,10 +42,10 @@ module.exports = (DB) => {
       data.owner = owner
       console.dir(data)
       return new Promise((resolve, reject) => {
-        sizes.insertOne(data).then((result) => {
+        sizes.insertOne(data).then(result => {
           // {"n":1,"ok":1}
           resolve(result)
-        }).catch((err) => {
+        }).catch(err => {
           reject(err)
         })
       })
@@ -54,12 +54,12 @@ module.exports = (DB) => {
       return new Promise((resolve, reject) => {
         // set all owners defaults to false
         // set selected entity default to true
-        sizes.updateMany({owner: owner},{$set: {default: false}}).then(result => {
-          sizes.updateOne({_id: ObjectId(id)}, {$set: {default: true}}).then(result => {
+        sizes.updateMany({ owner: owner }, { $set: { default: false } }).then(result => {
+          sizes.updateOne({ _id: ObjectId(id) }, { $set: { default: true } }).then(result => {
             resolve(result)
-          }).catch((err => {
+          }).catch(err => {
             reject(err)
-          }))
+          })
         }).catch(err => {
           reject(err)
         })
@@ -67,14 +67,12 @@ module.exports = (DB) => {
     },
     update: ({ id, data }) => {
       delete data._id
-      console.log('size.update()')
-      console.dir(data)
       return new Promise((resolve, reject) => {
         sizes.bulkWrite([
           { updateOne:
             {
-              "filter": {_id: ObjectId(id)},
-              "update": data
+              'filter': { _id: ObjectId(id) },
+              'update': data
             }
           }
         ]).then(result => {
@@ -85,7 +83,6 @@ module.exports = (DB) => {
       })
     },
     delete: ({ id }) => {
-      // console.log(`provider:id: ${id}, owner: ${owner}`)
       return new Promise((resolve, reject) => {
         sizes.deleteOne(
           { _id: ObjectId(id) },

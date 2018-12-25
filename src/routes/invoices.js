@@ -16,7 +16,7 @@ let invoices = null
 // return all invoices
 router.get('/', (req, res, next) => {
   invoices.getAll({ owner: req.owner }).then(results => {
-    res.status(200).json(results);
+    res.status(200).json(results)
   }).catch(next)
 })
 

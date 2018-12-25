@@ -1,36 +1,29 @@
 let db = null
-let status = null
+let users = null
 let ObjectId = null
+const jwt = require('jsonwebtoken')
+const config = require('../config/config')
 
 module.exports = (DB) => {
   db = DB.db
   ObjectId = DB.ObjectId
-  status = db.collection('status')
+  users = db.collection('users')
 
   return {
-    getAll: ({ owner }) => {
+    getAll: () => {
       return new Promise((resolve, reject) => {
-        status.find({ owner }).sort({ status: 1 }).toArray().then(results => {
+        users.find().sort({ username: 1 }).toArray().then(results => {
           resolve(results)
         }).catch(err => {
           reject(err)
         })
       })
     },
-    getAllBrief: ({ owner }) => {
+    authenticate: ({ username, password }) => {
       return new Promise((resolve, reject) => {
-        status.find({ owner, active: true }, { status: 1 })
-          .sort({ status: 1 }).toArray().then(results => {
-            resolve(results)
-          }).catch(err => {
-            reject(err)
-          })
-      })
-    },
-    getAllActive: ({ owner }) => {
-      return new Promise((resolve, reject) => {
-        status.find({ owner, active: true }).sort({ name: 1 }).toArray().then(results => {
-          resolve(results)
+        users.findOne({ username: username, password: password }).then(user => {
+          const token = jwt.sign({ sub: user._id }, config.secret)
+          resolve(user, token)
         }).catch(err => {
           reject(err)
         })
@@ -38,17 +31,17 @@ module.exports = (DB) => {
     },
     get: ({ id }) => {
       return new Promise((resolve, reject) => {
-        status.findOne({ _id: ObjectId(id) }).then(image => {
-          resolve(image)
+        users.findOne({ _id: ObjectId(id) }).then(result => {
+          console.dir(result)
+          resolve(result)
         }).catch(err => {
           reject(err)
         })
       })
     },
-    create: ({ owner, data }) => {
-      data.owner = owner
+    create: ({ data }) => {
       return new Promise((resolve, reject) => {
-        status.insertOne(data).then(result => {
+        users.insertOne(data).then(result => {
           // {"n":1,"ok":1}
           resolve(result)
         }).catch(err => {
@@ -58,10 +51,9 @@ module.exports = (DB) => {
     },
     delete: ({ id }) => {
       return new Promise((resolve, reject) => {
-        status.deleteOne(
-          { _id: ObjectId(id) },
+        users.deleteOne(
+          { id: ObjectId(id) },
           { w: 0, j: true }).then(result => {
-          // {"n":0,"ok":1}
           resolve(result.result)
         }).catch(err => {
           reject(err)

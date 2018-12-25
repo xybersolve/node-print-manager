@@ -30,6 +30,19 @@ exports.notFound = () => {
 // }
 
 /******************************************
+  Authentication Error Handler
+   * JWT was invalid
+*/
+exports.authenticationError = () => {
+  return (err, res, req, next) => {
+    if (err.name === 'UnauthorizedError') {
+      return res.status(401).json({ message: 'Invalid Token' })
+    }
+    next(err)
+  }
+}
+
+/******************************************
   Development Error Handler
    * development allows us to whow verbose error messages
 */

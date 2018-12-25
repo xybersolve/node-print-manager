@@ -12,22 +12,21 @@ module.exports = (DB) => {
       return new Promise((resolve, reject) => {
         actions.find({ owner }).sort({ name: 1 }).toArray().then((results) => {
           resolve(results)
-        }).catch((err) => {
+        }).catch(err => {
           reject(err)
         })
       })
     },
     getAllBrief: ({ owner }) => {
       return new Promise((resolve, reject) => {
-        actions.find({ owner, active: true },
-                       { name: 1, email: 1, commision: 1 })
-                  .sort({ name: 1 })
-                  .toArray()
-                  .then((results) => {
-          resolve(results)
-        }).catch((err) => {
-          reject(err)
-        })
+        actions.find({ owner, active: true }, { name: 1, email: 1, commision: 1 })
+          .sort({ name: 1 })
+          .toArray()
+          .then((results) => {
+            resolve(results)
+          }).catch((err) => {
+            reject(err)
+          })
       })
     },
     getAllActive: ({ owner }) => {
@@ -64,12 +63,12 @@ module.exports = (DB) => {
       return new Promise((resolve, reject) => {
         // set all owners defaults to false
         // set selected entity default to true
-        actions.updateMany({owner: owner},{$set: {default: false}}).then(result => {
-          actions.updateOne({_id: ObjectId(id)}, {$set: {default: true}}).then(result => {
+        actions.updateMany({ owner: owner }, { $set: { default: false } }).then(result => {
+          actions.updateOne({ _id: ObjectId(id) }, { $set: { default: true } }).then(result => {
             resolve(result)
-          }).catch((err => {
+          }).catch(err => {
             reject(err)
-          }))
+          })
         }).catch(err => {
           reject(err)
         })
