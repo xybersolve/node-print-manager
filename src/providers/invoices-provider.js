@@ -34,7 +34,7 @@ module.exports = (DB) => {
         invoice.insertOne(data).then(result => {
           // check result? {"n":1,"ok":1}
           // add invoiceId (created above) into each item objects
-          const items = data.items.map(item => { invoiceId: result._id, ...item })
+          const items = data.items.map(item => { invoiceId: result._id}, ...item )
           switch (data.action) {
             case 'Delivered':
               console.log('put items into inventory')
